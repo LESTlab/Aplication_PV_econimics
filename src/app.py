@@ -13,10 +13,11 @@ import math
 import os
 from os.path import join
 from statistics import mean
-from rezanje_konic_fun import rezanje_konic
-from samooskrba_fun import samooskrba
 import xml.etree.ElementTree as ET
 import locale
+
+from rezanje_konic_fun import rezanje_konic
+from samooskrba_fun import samooskrba
 
 main=os.path.abspath(os.getcwd())
 logo='\\LEST_logo.png'
