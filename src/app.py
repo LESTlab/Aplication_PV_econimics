@@ -166,7 +166,7 @@ dela_prosti_dnevi = ('01-01', '01-02', '02-08', '04-27', '05-01', '05-02', '06-2
 app = Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 app.config.suppress_callback_exceptions = True
-locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+#locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 
 
 def razsiri_podatke(contents,filename):
