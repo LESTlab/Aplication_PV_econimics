@@ -756,8 +756,8 @@ def izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc,
     return obracunska_moc_bloki, omreznina_skupno*1.22, cena, nova_prikljucna_moc_value
 
 def izračun_batt_osnovna(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarne):
-    samooskrba = Samooskrba(data['Energija A+']*4,data['proizvodnja_15']*4)
-    data['Battery power'], data["SoC"] = samooskrba.profil_samooskrbe(batt_cap, batt_cap*0.1, batt_cap/2, -batt_cap/2)
+    samoskrba = samooskrba(data['Energija A+']*4,data['proizvodnja_15']*4)
+    data['Battery power'], data["SoC"] = samoskrba.profil_samooskrbe(batt_cap, batt_cap*0.1, batt_cap/2, -batt_cap/2)
     #data['Battery power']=battProfile(data['Energija A+']*4,data['proizvodnja_15']*4, batt_cap,0,batt_cap/2, -batt_cap/2)#funkcija vzame profile moči in ne energije zatp *4
     #print(data['Battery power'])
     data['BESS']=data['Energija A+']-data['proizvodnja_15']-data['Battery power']/4
@@ -790,8 +790,8 @@ def izračun_batt_osnovna(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarn
     return skupaj_investicija + strosek_energije_PV_BESS + skupaj_investicija*zavarovanje
 
 def izračun_batt_rezanje_konic(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarne):
-    rezanje_konic = Rezanje_konic(data['Energija A+']*4,data['proizvodnja_15']*4)
-    data['Battery power'], data["SoC"] = rezanje_konic.profil_rezanja_konic(batt_cap, 0, batt_cap/2, -batt_cap/2)
+    rezanje_konicc = rezanje_konic(data['Energija A+']*4,data['proizvodnja_15']*4)
+    data['Battery power'], data["SoC"] = rezanje_konicc.profil_rezanja_konic(batt_cap, 0, batt_cap/2, -batt_cap/2)
     data['BESS']=data['Energija A+']-data['proizvodnja_15']+data['Battery power']/4
     data['Koncni_profil']=data['Energija A+']-data['proizvodnja_15']+data['Battery power']/4 # ker je moč in ne energija
     data.loc[data['BESS'] < 0, 'BESS'] = float(0)
