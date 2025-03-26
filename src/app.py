@@ -2440,4 +2440,4 @@ def ekonomika_baterija_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunsk
 
 #pogon aplikacije
 if __name__ == '__main__':
-    app.run(debug=False) #port added MP open http://127.0.0.1:8054/ in browser
+    app.run(debug=True) #port added MP open http://127.0.0.1:8054/ in browser
