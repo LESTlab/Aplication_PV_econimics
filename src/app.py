@@ -16,14 +16,17 @@ from statistics import mean
 import xml.etree.ElementTree as ET
 import locale
 
+
+
+#main=os.path.abspath(os.getcwd())
 from rezanje_konic_fun import rezanje_konic
 from samooskrba_fun import samooskrba
-
-main=os.path.abspath(os.getcwd())
-logo='\\LEST_logo.png'
-config = "\\config_cene.xml"
-path_logo=main+logo
-path_config = main+config
+#logo='\\LEST_logo.png'
+logo='LEST_logo.png'
+#config = "\\config_cene.xml"
+config = "config_cene.xml"
+path_logo=logo
+path_config = config
 test_base64 = base64.b64encode(open(path_logo, 'rb').read()).decode('ascii')
 data = ET.parse(path_config).getroot()
 
