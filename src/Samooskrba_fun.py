@@ -17,7 +17,7 @@ import sys
 import os
 from os.path import join
 
-class Samooskrba:
+class samooskrba:
     def __init__(self,consumption, production):   
         self.cons=consumption   #consumption (+) moč v kW       
         self.prod=production    #production (+) moč v kW
