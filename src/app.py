@@ -13,8 +13,8 @@ import math
 import os
 from os.path import join
 from statistics import mean
-from samooskrba_fun import samooskrba
 from rezanje_konic_fun import rezanje_konic
+from samooskrba_fun import samooskrba
 import xml.etree.ElementTree as ET
 import locale
 
