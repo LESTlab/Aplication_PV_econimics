@@ -2133,7 +2133,8 @@ def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vredn
     poraba['Časovna značka'] = pd.to_datetime(poraba['Časovna značka'])
     leto_osvetljenost = osvetljenost["Datum in cas"].iloc[0].year
     leto_poraba = poraba['Časovna značka'].iloc[0].year
-
+    poraba.at[poraba.index[-1], 'Časovna značka'] = poraba['Časovna značka'].iloc[-1].replace(year=leto_poraba)
+    
     if leto_osvetljenost == 2000:
         osvetljenost["Datum in cas"] = osvetljenost["Datum in cas"].apply(
         lambda x: x.replace(year=leto_poraba))
