@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 
-class Rezanje_konic:
+class rezanje_konic:
     def __init__(self,consumption, production):   
         self.cons=consumption   #consumption (+) moč v kW       
         self.prod=production    #production (+) moč v kW

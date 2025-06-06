@@ -105,4 +105,24 @@
             <blok5>0.00661</blok5>
         </cene_bloki_energija_4>
     </cene_bloki_energija>
+	<visina_prispevka_OVE>
+		<gospodinjstvo>0.77562</gospodinjstvo>
+		<NN_brez>1.23398</NN_brez>
+		<NN_nad_43>2.19296</NN_nad_43>
+		<NN_zbiralke>2.45255</NN_zbiralke>
+		<SN>3.44078</SN>
+		<SN_zbiralke>4.42816</SN_zbiralke>
+		<VN>2.97160</VN>
+	</visina_prispevka_OVE>
+	<visina_prispevka_OVE_star>
+		<gospodinjstvo>0.73896</gospodinjstvo>
+		<ove_m_2500_NN>2.95423</ove_m_2500_NN>
+		<ove_v_2500_NN>6.37796</ove_v_2500_NN>
+		<ove_m_2500_z_NN>3.14688</ove_m_2500_z_NN>
+		<ove_v_2500_z_NN>6.22737</ove_v_2500_z_NN>
+		<ove_m_2500_SN>1.84450</ove_m_2500_SN>
+		<ove_v_2500_SN>4.10702</ove_v_2500_SN>
+		<ove_m_2500_z_SN>4.90587</ove_m_2500_z_SN>
+		<ove_v_2500_z_SN>5.42559</ove_v_2500_z_SN>
+	</visina_prispevka_OVE_star>
 </root>

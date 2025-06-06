@@ -55,6 +55,28 @@ MT_m_2500_z_SN = float(data.find("./cene/MT_m_2500_z_SN").text)
 VT_v_2500_z_SN = float(data.find("./cene/VT_v_2500_z_SN").text)
 MT_v_2500_z_SN = float(data.find("./cene/MT_v_2500_z_SN").text)
 
+#stari prispevki za OVE
+ove_gospodinjstvo_star = float(data.find("./visina_prispevka_OVE_star/gospodinjstvo").text)
+ove_m_2500_NN = float(data.find("./visina_prispevka_OVE_star/ove_m_2500_NN").text)
+ove_v_2500_NN = float(data.find("./visina_prispevka_OVE_star/ove_v_2500_NN").text)
+ove_m_2500_z_NN = float(data.find("./visina_prispevka_OVE_star/ove_m_2500_z_NN").text)
+ove_v_2500_z_NN = float(data.find("./visina_prispevka_OVE_star/ove_v_2500_z_NN").text)
+ove_m_2500_SN = float(data.find("./visina_prispevka_OVE_star/ove_m_2500_SN").text)
+ove_v_2500_SN = float(data.find("./visina_prispevka_OVE_star/ove_v_2500_SN").text)
+ove_m_2500_z_SN = float(data.find("./visina_prispevka_OVE_star/ove_m_2500_z_SN").text)
+ove_v_2500_z_SN = float(data.find("./visina_prispevka_OVE_star/ove_v_2500_z_SN").text)
+
+
+
+#prispevki za OVE
+OVE_gospodinjstvo = float(data.find("./visina_prispevka_OVE/gospodinjstvo").text)
+OVE_NN_brez = float(data.find("./visina_prispevka_OVE/NN_brez").text)
+OVE_NN_nad_43 = float(data.find("./visina_prispevka_OVE/NN_nad_43").text)
+OVE_NN_zbiralke = float(data.find("./visina_prispevka_OVE/NN_zbiralke").text)
+OVE_SN = float(data.find("./visina_prispevka_OVE/SN").text)
+OVE_SN_zbiralke = float(data.find("./visina_prispevka_OVE/SN_zbiralke").text)
+OVE_VN = float(data.find("./visina_prispevka_OVE/VN").text)
+
 # Obracunska moc ELES 1.1.2024
 obracunska_moc_cena = float(data.find("./moc/obracunska_moc").text)
 
@@ -296,8 +318,6 @@ def parse_contents(contents, filename):
     except Exception as e:
         return html.Div([f'Napaka pri branju datoteke: {str(e)}'])
 
-
-
 def pokazi_drugi_del_aplikacije(prvi_file, drugi_file):
     if prvi_file == 1 and drugi_file == 1:
         return html.Div([
@@ -334,7 +354,7 @@ def pokazi_drugi_del_aplikacije(prvi_file, drugi_file):
                         style={'display': 'block', 'text-align': 'center', 'marginBottom': '10px', 'font-size': '12px'}),
             html.Div([
                 html.Label('Cena elektrarne[€/kW]:', style={'display': 'block', 'text-align': 'center'}),
-                dcc.Input(id="cena_elektrarne", value=850, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': '0 auto', 'display': 'block', 'marginBottom': '10px'}),
+                dcc.Input(id="cena_elektrarne", value=420, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': '0 auto', 'display': 'block', 'marginBottom': '10px'}),
                 
                 html.Label('Cena električne en. MT[€/kWh]:', style={'display': 'block', 'text-align': 'center'}),
                 dcc.Input(id="MT", value=0.145, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': '0 auto', 'display': 'block', 'marginBottom': '10px'}),
@@ -490,9 +510,13 @@ def pokazi_drugi_del_aplikacije(prvi_file, drugi_file):
                 dcc.Store(id="stored_baterija2-button"),
                 dcc.Store(id="stored_velikost_bat"),
                 dcc.Store(id="stored_kapaciteta_baterije_rezanje_konic"),
+                dcc.Store(id="stored_kapaciteta_baterije_osnovno"),
+                dcc.Store(id="stored_optimum_osnovna"),
                 dcc.Store(id="izvoz-podatki_bat"),
                 dcc.Store(id="stored_cena_baterije"),
-
+                dcc.Store(id="stored_prispevek_OVE"),
+                dcc.Store(id="stored_prispevek_OVE_star"),
+                dcc.Store(id="stored_moc_elektrarne"),
 
                 html.Button('Shrani podatke', id="lock_button", style={
                     'backgroundColor': '#000000',  # Green background
@@ -520,18 +544,19 @@ def pokazi_drugi_del_aplikacije(prvi_file, drugi_file):
     else:
         return
 
-def izračun_cene_el_energije(obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, stolpeci):
+def izračun_cene_el_energije(obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, stolpeci, stored_prispevek_OVE_star):
     procent_VT_OLD = all[all['Tarifa']=='V']["Energija A+"].sum()/all["Energija A+"].sum()
     procent_MT_OLD = all[all['Tarifa']=='N']["Energija A+"].sum()/all["Energija A+"].sum()
     if ET_omrez == 0 or ET_omrez is None or ET == 0:
         omreznina_ET_OLD = procent_VT_OLD*VT_omrez + procent_MT_OLD*MT_omrez + 12*obracunska_moc*obracunska_moc_cena/all["Energija A+"].sum()
+
         CET_OLD = procent_VT_OLD*VT + procent_MT_OLD*MT
 
     else:
         omreznina_ET_OLD = 1*ET_omrez + 12*obracunska_moc*obracunska_moc_cena/all["Energija A+"].sum()
         CET_OLD = 1*ET
 
-    ostale_dajatve_OLD = 0.00013 + 0.0008 + 0.001530 + 12*obracunska_moc*4.1703/all["Energija A+"].sum()
+    ostale_dajatve_OLD = 0.00013 + 0.0008 + 0.001530 + 12*obracunska_moc*stored_prispevek_OVE_star/all["Energija A+"].sum()
     DDV = 22/100
     O_ET_OLD= omreznina_ET_OLD  + ostale_dajatve_OLD
     C_ET_OLD = (O_ET_OLD+CET_OLD)*(1+DDV)
@@ -542,20 +567,24 @@ def izračun_cene_el_energije(obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omre
     
     if ET_omrez == 0 or ET_omrez is None:
         omreznina_ET_NEW = procent_VT_NEW*VT_omrez + procent_MT_NEW*MT_omrez + 12*obracunska_moc*obracunska_moc_cena/all[all[stolpeci]>0][stolpeci].sum()
+
         CET_NEW = procent_VT_NEW*VT + procent_MT_NEW*MT
+
     else:
         omreznina_ET_NEW = 1*ET_omrez + 12*obracunska_moc*obracunska_moc_cena/all[all[stolpeci]>0][stolpeci].sum()
         CET_NEW = 1*ET
 
-
-    ostale_dajatve_NEW = 0.00013 + 0.0008 + 0.001530 + 12*obracunska_moc*4.1703/all[all[stolpeci]>0][stolpeci].sum()
+    if stored_prispevek_OVE_star == 0.73896:
+        ostale_dajatve_NEW = 0.00013 + 0.0008 + 0.001530 
+    else:
+        ostale_dajatve_NEW = 0.00013 + 0.0008 + 0.001530 + 12*obracunska_moc*stored_prispevek_OVE_star/all[all[stolpeci]>0][stolpeci].sum()
     O_ET_NEW= omreznina_ET_NEW  + ostale_dajatve_NEW
     C_ET_NEW = (O_ET_NEW+CET_NEW)*(1+DDV)
     return C_ET_OLD, C_ET_NEW, omreznina_ET_OLD*1.22*all["Energija A+"].sum(), omreznina_ET_NEW*1.22*all[all[stolpeci]>0][stolpeci].sum()
 
-def objective_fun(x,cena_elektrarne, obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena):
+def objective_fun(x,cena_elektrarne, obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, stored_prispevek_OVE_star):
     all["razlika"]=all["Energija A+"]-all["proizvodnja_15_norm"]*x
-    C_ET_OLD, C_ET_NEW, omreznina_stara,stran_dej  = izračun_cene_el_energije(obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez,  obracunska_moc_cena,"razlika")
+    C_ET_OLD, C_ET_NEW, omreznina_stara,stran_dej  = izračun_cene_el_energije(obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez,  obracunska_moc_cena,"razlika", stored_prispevek_OVE_star)
     stosek_old = all["Energija A+"].sum()*C_ET_OLD
     strosek_new = all[all["razlika"]>0]["razlika"].sum() * C_ET_NEW
     prihranek = stosek_old - strosek_new
@@ -620,7 +649,8 @@ def bloki(df):  #Nova omrežnina
 
 def obracunska_moc_fun(data, prikljucna_moc, delez, stolpec):
     dogovorjena_moc=[]
-
+    obracunska_moc_min =[]
+    trig = 0
     for blok in range (1,6):    
         moc_blok_sorted=data[stolpec].iloc[np.where(data['Blok']==blok)].sort_values(ascending=False)*4
         obracunska_moc_blok_n=mean([moc_blok_sorted.iloc[0],moc_blok_sorted.iloc[1],moc_blok_sorted.iloc[2]])
@@ -630,7 +660,21 @@ def obracunska_moc_fun(data, prikljucna_moc, delez, stolpec):
         dogovorjena_moc[0]=dogovorjena_moc[0]
     else:
         dogovorjena_moc[0]=max(prikljucna_moc*delez/100, 3.5) #vzame višjo izmed vrednosti
-    
+        trig = 1
+        for blok in range (1,3):    
+            if blok == 1:
+                # For blok 1: November (11), December (12), January (1), February (2)
+                filter_meseci = [11, 12, 1, 2]
+            elif blok == 2:
+                # For blok 2: March (3) to October (10)
+                filter_meseci = list(range(3, 11))
+
+            # Apply month filter
+            blok_data = data[data['Blok'] == blok]
+            filtered_data = blok_data[blok_data['Month'].isin(filter_meseci)]
+            max_per_month = filtered_data.groupby('Month')[stolpec].max() * 4
+            obracunska_moc_min.extend(max_per_month.tolist())
+
     #Min vrednost Blok 2    
     if dogovorjena_moc[1]>=dogovorjena_moc[0]:
         dogovorjena_moc[1]=dogovorjena_moc[1]
@@ -656,7 +700,7 @@ def obracunska_moc_fun(data, prikljucna_moc, delez, stolpec):
         dogovorjena_moc[4]=dogovorjena_moc[3] 
         
     dogovorjena_moc=[round(elem,1) for elem in dogovorjena_moc ]   
-    return dogovorjena_moc
+    return dogovorjena_moc, obracunska_moc_min, trig
 
 def obracunska_moc_fun_nova_prikljucna_moc(data, delez, stolpec):
     dogovorjena_moc=[]
@@ -714,10 +758,11 @@ def omreznina_energija(df, cene_bloki_energija, stolpec):
     df.loc[df['Blok']==3,"omreznina_energija"]=df.loc[df['Blok']==3,stolpec]*float(cene_bloki_energija[2])
     df.loc[df['Blok']==4,"omreznina_energija"]=df.loc[df['Blok']==4,stolpec]*float(cene_bloki_energija[3])
     df.loc[df['Blok']==5,"omreznina_energija"]=df.loc[df['Blok']==5,stolpec]*float(cene_bloki_energija[4])
-    strosek_omreznine_energija = df["omreznina_energija"].sum()
+    strosek_omreznine_energija = df.loc[df["omreznina_energija"] > 0, "omreznina_energija"].sum()
+
     return df, strosek_omreznine_energija
 
-def izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, delez, stolpec, cena_blok_moc, cena_blok_energija, bloki_check, bloki_values):
+def izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, moc_elektrarne, VT, MT, ET, delez, stolpec, cena_blok_moc, cena_blok_energija, bloki_check, bloki_values, prispevek_OVE):
     if stolpec == "Energija A+":
         VT_en = data[data['Tarifa']=='V'][stolpec].sum()
         MT_en = data[data['Tarifa']=='N'][stolpec].sum()
@@ -732,38 +777,50 @@ def izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc,
         ET_en = data[data[stolpec]>0][stolpec].sum()
 
     nova_prikljucna_moc_value = "Ne. Nismo prilagodili blokov."
+    trig = 0
     if (bloki_check == ["BLOKI_YES"]) and (stolpec == "Energija A+"):
         obracunska_moc_bloki = bloki_values
     elif (nova_prikljucna_moc == ["MOC_YES"]) and (stolpec == "Energija A+"):
-        obracunska_moc_bloki = obracunska_moc_fun(data, prikljucna_moc, delez, stolpec)
+        obracunska_moc_bloki, obracunska_moc_min, trig = obracunska_moc_fun(data, prikljucna_moc, delez, stolpec)
     elif (nova_prikljucna_moc == ["MOC_YES"]) and (stolpec == "razlika"):
         obracunska_moc_bloki, nova_prikljucna_moc_value = obracunska_moc_fun_nova_prikljucna_moc(data, delez, stolpec)
     elif (nova_prikljucna_moc == ["MOC_YES"]) and (stolpec == "BESS"):
         obracunska_moc_bloki, nova_prikljucna_moc_value = obracunska_moc_fun_nova_prikljucna_moc(data, delez, stolpec)
     else:
-        obracunska_moc_bloki = obracunska_moc_fun(data, prikljucna_moc, delez, stolpec)
-
+        obracunska_moc_bloki, obracunska_moc_min, trig = obracunska_moc_fun(data, prikljucna_moc, delez, stolpec)
 
     strosek_omreznine_moc=omreznina_moc(obracunska_moc_bloki, cena_blok_moc)
     data, strosek_omreznine_energija = omreznina_energija(data, cena_blok_energija, stolpec)
     omreznina_skupno = strosek_omreznine_moc + strosek_omreznine_energija
-    ostale_dajatve = (0.00013 + 0.0008 + 0.001530)*ET_en + 12*obracunska_moc*4.1703
+
+    if delez == 25:
+        if trig == 0:
+            ostale_dajatve = (0.00013 + 0.0008 + 0.001530)*ET_en + 4*obracunska_moc_bloki[0]*prispevek_OVE + 8*obracunska_moc_bloki[1]*prispevek_OVE
+        elif trig == 1:
+            ostale_dajatve = (0.00013 + 0.0008 + 0.001530)*ET_en + (np.array(obracunska_moc_min)*prispevek_OVE).sum()
+    else:
+        if stolpec == "Energija A+":
+            ostale_dajatve = (0.00013 + 0.0008 + 0.001530)*ET_en + 4*obracunska_moc_bloki[0]*prispevek_OVE + 8*obracunska_moc_bloki[1]*prispevek_OVE
+        else:
+            ostale_dajatve = (0.00013 + 0.0008 + 0.001530)*ET_en + 4*max(0, obracunska_moc_bloki[0] - math.ceil(moc_elektrarne))*prispevek_OVE + 8*max(0, obracunska_moc_bloki[0] - math.ceil(moc_elektrarne))*prispevek_OVE
+
+            
+    
+    
     if ET == 0 or ET is None:
         energija = VT_en * VT + MT_en * MT
-
     else:
         energija = ET_en*ET
 
     DDV = 22/100
     cena = (omreznina_skupno + energija + ostale_dajatve)*(1+DDV)
+    
+    return obracunska_moc_bloki, omreznina_skupno*1.22, cena, nova_prikljucna_moc_value    
 
-    return obracunska_moc_bloki, omreznina_skupno*1.22, cena, nova_prikljucna_moc_value
+def izračun_batt_osnovna(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarne, moc_elektrarne):
+    samooskrba_var = samooskrba(data['Energija A+']*4,data['proizvodnja_15']*4)
+    data['Battery power'], data["SoC"] = samooskrba_var.profil_samooskrbe(batt_cap, batt_cap*0.1, batt_cap/2, -batt_cap/2)
 
-def izračun_batt_osnovna(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarne):
-    samoskrba = samooskrba(data['Energija A+']*4,data['proizvodnja_15']*4)
-    data['Battery power'], data["SoC"] = samoskrba.profil_samooskrbe(batt_cap, batt_cap*0.1, batt_cap/2, -batt_cap/2)
-    #data['Battery power']=battProfile(data['Energija A+']*4,data['proizvodnja_15']*4, batt_cap,0,batt_cap/2, -batt_cap/2)#funkcija vzame profile moči in ne energije zatp *4
-    #print(data['Battery power'])
     data['BESS']=data['Energija A+']-data['proizvodnja_15']-data['Battery power']/4
     data['Koncni_profil']=data['Energija A+']-data['proizvodnja_15']-data['Battery power']/4 # ker je moč in ne energija
     data.loc[data['BESS'] < 0, 'BESS'] = float(0)
@@ -786,16 +843,16 @@ def izračun_batt_osnovna(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarn
 
 
     #############################################################################
-    pv_power=(data['proizvodnja_15']/data['proizvodnja_15_norm']).mean()
-    investicija_PV = pv_power*cena_elektrarne
+
+    investicija_PV = moc_elektrarne*cena_elektrarne
     investicija_BHEE = batt_cap*BEES_price
     skupaj_investicija = (investicija_BHEE+investicija_PV)/15
 
     return skupaj_investicija + strosek_energije_PV_BESS + skupaj_investicija*zavarovanje
 
-def izračun_batt_rezanje_konic(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarne):
-    rezanje_konicc = rezanje_konic(data['Energija A+']*4,data['proizvodnja_15']*4)
-    data['Battery power'], data["SoC"] = rezanje_konicc.profil_rezanja_konic(batt_cap, 0, batt_cap/2, -batt_cap/2)
+def izračun_batt_rezanje_konic(batt_cap, data, VT, MT, ET, BEES_price, cena_elektrarne, moc_elektrarne):
+    rezanje_konic_var = rezanje_konic(data['Energija A+']*4,data['proizvodnja_15']*4)
+    data['Battery power'], data["SoC"] = rezanje_konic_var.profil_rezanja_konic(batt_cap, 0, batt_cap/2, -batt_cap/2)
     data['BESS']=data['Energija A+']-data['proizvodnja_15']+data['Battery power']/4
     data['Koncni_profil']=data['Energija A+']-data['proizvodnja_15']+data['Battery power']/4 # ker je moč in ne energija
     data.loc[data['BESS'] < 0, 'BESS'] = float(0)
@@ -818,8 +875,8 @@ def izračun_batt_rezanje_konic(batt_cap, data, VT, MT, ET, BEES_price, cena_ele
 
 
     #############################################################################
-    pv_power=(data['proizvodnja_15']/data['proizvodnja_15_norm']).mean()
-    investicija_PV = pv_power*cena_elektrarne
+
+    investicija_PV = moc_elektrarne*cena_elektrarne
     investicija_BHEE = batt_cap*BEES_price
     skupaj_investicija = (investicija_BHEE+investicija_PV)/10
 
@@ -859,7 +916,7 @@ app.layout = html.Div(children=[
             "Izračunate lahko ekonomiko vaše dimenzionirane FV elektrarne ali pa ji dodate baterijski hranilnik el. energije(BHEE). "
             "Ekonomika elektrarne vam bo izračunala cene el. energije brez in z FV elektrarno, izračunala prihranek in vračilno dobo investicije. "
             "Izračuni bodo narejeni za oba načina obračunavanja omrežnine za star in nov model. "
-            "Če pa boste hoteli dodati baterijo, bo kalkulator dodal BHEE optimalne velikosti in ponovno izračunal ekonomiko investicije po starem in novem načinu obračunavanja omrežnine. Prav tako lahko baterijo vodimo tako, da zmanjšamo konice odjema. Pri tem vodenju baterije si uporabnik sam izbere kapaciteto BHEE. "
+            "Če pa boste hoteli dodati baterijo, bo kalkulator dodal BHEE optimalne velikosti in ponovno izračunal ekonomiko investicije po starem in novem načinu obračunavanja omrežnine. Prav tako lahko baterijo vodimo tako, da zmanjšamo konice odjema. Pri tem vodenju baterije si uporabnik sam izbere kapaciteto BHEE. Osnovno vodenje BHEE je bolj uporaben za gospodinjske odjemalce, vodenje BHEE z algoritmom rezanja konic pa je bolj uporaben za poslovne odjemalce z višjo porabo."
             "Pri izračunih ekonomike je upoštevano tudi zavarovanje v velikosti 1.05 % celotne investicije.",
              style={'font-family': 'Arial', 'padding-left': '10px'}),
         html.P("Stara metoda obračunavanja omrežnine:", style={'font-family': 'Arial', 'padding-left': '10px'}),
@@ -877,7 +934,7 @@ app.layout = html.Div(children=[
 
 
     html.Div([
-        html.H2(children='ARSO datoteka o sončni obsevanosti', style={'text-align': 'center', 'color': 'black'}, className='heading2'),
+        html.H2(children='Datoteka o sončni obsevanosti', style={'text-align': 'center', 'color': 'black'}, className='heading2'),
         dcc.Dropdown(
             id='upload_arso_all',
             options=[
@@ -1594,31 +1651,33 @@ def zaklepanje_blokov(bloki_check, n_clicks):
     Output("stored_obracunska_cena", "data"),
     Output("stored_cena_blok_moc", "data"),
     Output("stored_cena_blok_energija", "data"),
+    Output("stored_prispevek_OVE","data"),
+    Output("stored_prispevek_OVE_star","data"),
     Input(component_id="stored_tip_merilnega_mesta", component_property="data"),
 )
 def določitev_tarife(tip_merilnega_mesta):
     if  tip_merilnega_mesta == "Gospodinjstvo_dvotarifni":
-        return VT_o, MT_o, 0, obracunska_moc_cena, cene_bloki_moc_0, cene_bloki_energija_0
+        return VT_o, MT_o, 0, obracunska_moc_cena, cene_bloki_moc_0, cene_bloki_energija_0, OVE_gospodinjstvo, ove_gospodinjstvo_star
     elif tip_merilnega_mesta == "Gospodinjstvo_enotarifni":
-        return 0, 0, ET_o, obracunska_moc_cena, cene_bloki_moc_0, cene_bloki_energija_0
+        return 0, 0, ET_o, obracunska_moc_cena, cene_bloki_moc_0, cene_bloki_energija_0, OVE_gospodinjstvo, ove_gospodinjstvo_star
     elif  tip_merilnega_mesta == "Poslovni_odjem_NN_T≥2500":
-            return VT_v_2500_NN, MT_v_2500_NN, 0, obrm_v_2500_NN, cene_bloki_moc_0, cene_bloki_energija_0
+            return VT_v_2500_NN, MT_v_2500_NN, 0, obrm_v_2500_NN, cene_bloki_moc_0, cene_bloki_energija_0, OVE_NN_nad_43 , ove_v_2500_NN
     elif tip_merilnega_mesta == "Poslovni_odjem_NN_T<2500":
-            return VT_m_2500_NN, MT_m_2500_NN, 0, obrm_m_2500_NN, cene_bloki_moc_0, cene_bloki_energija_0
+            return VT_m_2500_NN, MT_m_2500_NN, 0, obrm_m_2500_NN, cene_bloki_moc_0, cene_bloki_energija_0, OVE_NN_nad_43, ove_m_2500_NN
     elif tip_merilnega_mesta == "Poslovni_odjem_NN_zbiralke_T≥2500":
-            return VT_v_2500_z_NN, MT_v_2500_z_NN, 0, obrm_v_2500_z_NN, cene_bloki_moc_1, cene_bloki_energija_1
+            return VT_v_2500_z_NN, MT_v_2500_z_NN, 0, obrm_v_2500_z_NN, cene_bloki_moc_1, cene_bloki_energija_1, OVE_NN_zbiralke, ove_v_2500_z_NN
     elif tip_merilnega_mesta == "Poslovni_odjem_NN_zbiralke_T<2500":
-            return VT_m_2500_z_NN, MT_m_2500_z_NN, 0, obrm_m_2500_z_NN, cene_bloki_moc_1, cene_bloki_energija_1
+            return VT_m_2500_z_NN, MT_m_2500_z_NN, 0, obrm_m_2500_z_NN, cene_bloki_moc_1, cene_bloki_energija_1, OVE_NN_zbiralke, ove_m_2500_z_NN
     elif tip_merilnega_mesta == "Poslovni_odjem_SN_T≥2500":
-            return VT_v_2500_SN, MT_v_2500_SN, 0, obrm_v_2500_SN, cene_bloki_moc_2, cene_bloki_energija_2
+            return VT_v_2500_SN, MT_v_2500_SN, 0, obrm_v_2500_SN, cene_bloki_moc_2, cene_bloki_energija_2, OVE_SN, ove_v_2500_SN
     elif tip_merilnega_mesta == "Poslovni_odjem_SN_T<2500":
-            return VT_m_2500_SN, MT_m_2500_SN, 0, obrm_m_2500_SN, cene_bloki_moc_2, cene_bloki_energija_2
+            return VT_m_2500_SN, MT_m_2500_SN, 0, obrm_m_2500_SN, cene_bloki_moc_2, cene_bloki_energija_2, OVE_SN, ove_m_2500_SN
     elif tip_merilnega_mesta == "Poslovni_odjem_SN_zbiralke_T≥2500":
-            return VT_v_2500_z_SN, MT_v_2500_z_SN, 0, obrm_v_2500_z_SN, cene_bloki_moc_3, cene_bloki_energija_3
+            return VT_v_2500_z_SN, MT_v_2500_z_SN, 0, obrm_v_2500_z_SN, cene_bloki_moc_3, cene_bloki_energija_3, OVE_SN_zbiralke, ove_v_2500_z_SN
     elif tip_merilnega_mesta == "Poslovni_odjem_SN_zbiralke_T<2500":
-            return VT_m_2500_z_SN, MT_m_2500_z_SN, 0, obrm_m_2500_z_SN, cene_bloki_moc_3, cene_bloki_energija_3
+            return VT_m_2500_z_SN, MT_m_2500_z_SN, 0, obrm_m_2500_z_SN, cene_bloki_moc_3, cene_bloki_energija_3, OVE_SN_zbiralke, ove_m_2500_z_SN
     else:
-        return 0,0,0,0,0,0
+        return 0,0,0,0,0,0,0,0
     
 #callback za obravnaje gumba v rdeče, če ni izpolnjen pogoj vt mt
 @app.callback(
@@ -1732,7 +1791,7 @@ def shrani_excel_bat(n_clicks, data):
             "Battery power":"Delovanje_baterije[kWh]",
             "Koncni_profil":"Razlika odjem-proizvodnja_15-delovanje_baterije[kWh]",
         })
-        df = df.drop(columns=["Month","Hour","Day","Sezona","Dela prost dan","Tarifa","Blok",'proizvodnja_15_norm',"Strosek PV & BESS","BESS", "SoC"])# izbriši SoC
+        df = df.drop(columns=["Month","Hour","Day","Sezona","Dela prost dan",'proizvodnja_15_norm',"BESS"])# izbriši SoC
     return dcc.send_data_frame(df.to_excel, "data_batery.xlsx", index=False)
 
 
@@ -1863,7 +1922,17 @@ def update_buttons(n_clicks_ekonomika, n_clicks_baterija, n_clicks_baterija2):
             dcc.Loading([html.Div([
                 html.Div(id="velikost_bat",style={'display': 'none'}),#skriti div da deluje dcc.Loading za baterijo
                 html.Label('Cena BHEE[€/kWh]:', style={'display': 'block', 'text-align': 'center', 'marginTop': '10px'}),
-                dcc.Input(id="cena_baterije", value=400, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': 'auto', 'display': 'block', 'text-align': 'center'}),
+                dcc.Input(id="cena_baterije", value=182, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': 'auto', 'display': 'block', 'text-align': 'center'}),
+                html.Label('Kapaciteta BHEE[kWh]:', style={'display': 'block', 'text-align': 'center', 'marginTop': '10px'}),
+                dcc.Input(id="kapaciteta_baterije_osnovno", value=2, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': 'auto', 'display': 'block', 'text-align': 'center'}),
+                dcc.Checklist(
+                    id="optimum_osnovna",
+                    options=[
+                        {'label': 'Optimalna kapaciteta BHEE', 'value': 'OPTIMUM_YES'},
+                    ],
+                    value=['OPTIMUM_YES'],
+                    labelStyle={'display': 'inline-block', 'margin-right': '20px'}
+                ),
                 html.Label(
                     ['POČAKAJ NEKAJ TRENUTKOV!!!'],
                     style={'whiteSpace': 'pre-line', 'text-align': 'center', 'marginTop': '10px', 'font-size': '24px'}
@@ -1966,7 +2035,7 @@ def update_buttons(n_clicks_ekonomika, n_clicks_baterija, n_clicks_baterija2):
             dcc.Loading([html.Div([
                 html.Div(id="velikost_bat",style={'display': 'none'}),#skriti div da deluje dcc.Loading za baterijo
                 html.Label('Cena BHEE[€/kWh]:', style={'display': 'block', 'text-align': 'center', 'marginTop': '10px'}),
-                dcc.Input(id="cena_baterije", value=400, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': 'auto', 'display': 'block', 'text-align': 'center'}),
+                dcc.Input(id="cena_baterije", value=182, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': 'auto', 'display': 'block', 'text-align': 'center'}),
                 html.Label('Kapaciteta BHEE[kWh]:', style={'display': 'block', 'text-align': 'center', 'marginTop': '10px'}),
                 dcc.Input(id="kapaciteta_baterije_rezanje_konic", value=50, type='number', placeholder='Vnesite vrednost', style={'width': '10%', 'margin': 'auto', 'display': 'block', 'text-align': 'center'}),
                 html.Label(
@@ -2095,6 +2164,28 @@ def stored_baterija(kapaciteta_baterije_rezanje_konic):
     else:
         return 0
 
+#callback za kapaciteto baterije
+@app.callback(
+    Output("stored_kapaciteta_baterije_osnovno", "data"),
+    Input("kapaciteta_baterije_osnovno", "value"),
+)  
+def stored_baterija(kapaciteta_baterije_osnovno):
+    if kapaciteta_baterije_osnovno is not None:
+        return kapaciteta_baterije_osnovno
+    else:
+        return 0
+    
+#callback za optimum
+@app.callback(
+    Output("stored_optimum_osnovna", "data"),
+    Input("optimum_osnovna", "value"),
+)  
+def stored_baterija(optimum_osnovna):
+    if optimum_osnovna is not None:
+        return optimum_osnovna
+    else:
+        return 0
+
 
 @app.callback(
     Output("moc_elektrarne-out", "children"),
@@ -2105,6 +2196,7 @@ def stored_baterija(kapaciteta_baterije_rezanje_konic):
     Output("povrsina_elektrarne-out", "children"),
     Output("stevilo_panelov-out", "children"),
     Output("izvoz-podatki", "data"),
+    Output("stored_moc_elektrarne", "data"),
     Input(component_id="nacin_izracuna", component_property="value"),
     State(component_id="stored_panel_power", component_property="data"),
     State(component_id="stored_povrsina", component_property="data"),
@@ -2121,12 +2213,13 @@ def stored_baterija(kapaciteta_baterije_rezanje_konic):
     State(component_id="stored_obracunska_moc", component_property="data"),
     State(component_id="stored-data", component_property="data"),       
     State(component_id="stored-data-2", component_property="data"),
+    State(component_id="stored_prispevek_OVE_star", component_property="data"),
     prevent_initial_call=True
 
 )
-def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vrednost, cena_elektrarne, VT, MT, ET, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, obracunska_moc, osvetljenost, poraba):
+def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vrednost, cena_elektrarne, VT, MT, ET, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, obracunska_moc, osvetljenost, poraba, stored_prispevek_OVE_star):
     if (moč_panela == 0) or (povrsina_panela ==0) or (eff_panela == 0) or (vrednost is None) or (moč_panela == 0) or (povrsina_panela == 0) or (eff_panela == 0)  or (MT is None) or (VT is None)  or (ET is None) or (obracunska_moc == 0):
-        return 0,0,0,0,0,0,0,0
+        return 0,0,0,0,0,0,0,0,0
     osvetljenost = pd.DataFrame.from_dict(osvetljenost)
     poraba = pd.DataFrame.from_dict(poraba)
     osvetljenost["Datum in cas"] = pd.to_datetime(osvetljenost['Datum in cas'])
@@ -2134,11 +2227,10 @@ def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vredn
     leto_osvetljenost = osvetljenost["Datum in cas"].iloc[0].year
     leto_poraba = poraba['Časovna značka'].iloc[0].year
     poraba.at[poraba.index[-1], 'Časovna značka'] = poraba['Časovna značka'].iloc[-1].replace(year=leto_poraba)
-    
+
     if leto_osvetljenost == 2000:
         osvetljenost["Datum in cas"] = osvetljenost["Datum in cas"].apply(
         lambda x: x.replace(year=leto_poraba))
-
 
     stevilo_panelov_1kW = 1000/moč_panela
     moc_15=povrsina_panela*stevilo_panelov_1kW*osvetljenost['Soncno sevanje (W/m2)']*eff_panela/100*izkoristek_razsmenrika
@@ -2149,6 +2241,7 @@ def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vredn
     all=dela_prost_dan(all)
     all=tarifa(all)
     all=bloki(all)
+
     celotna_poraba = all["Energija A+"].sum()
 
     if nacin_izracuna == "Število panelov":
@@ -2183,7 +2276,7 @@ def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vredn
     elif  nacin_izracuna == "Optimalna velikost":
         bounds_x1 = (1,3000)
         x0 = np.array([300])
-        result = minimize(objective_fun, x0, method="SLSQP", bounds=[bounds_x1], args=(cena_elektrarne, obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena))
+        result = minimize(objective_fun, x0, method="SLSQP", bounds=[bounds_x1], args=(cena_elektrarne, obracunska_moc, VT, MT, ET, all, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, stored_prispevek_OVE_star))
         # Print the result
         multiplikator = result.x[0]
         multiplikator = int(multiplikator)
@@ -2208,8 +2301,8 @@ def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vredn
     selected_columns = ['Časovna značka', 'index_dneva', "Month", "Hour", "Day", "Sezona", "Dela prost dan", "Tarifa", "Blok", 'Energija A+', 'proizvodnja_15_norm', 'proizvodnja_15', 'razlika']
     df_result = all[selected_columns]
     df_result_dict = df_result.to_dict('records')
-    return round(multiplikator,1), round(celotna_poraba/1000,2), round(pozitivna_proizvodnja/1000,2), round(viski/1000,2), round(procent,2),  round(povrsina_elektrarne,0), round(stevilo_panelov,0), df_result_dict #
-
+    return round(multiplikator,1), round(celotna_poraba/1000,2), round(pozitivna_proizvodnja/1000,2), round(viski/1000,2), round(procent,2),  round(povrsina_elektrarne,0), round(stevilo_panelov,0), df_result_dict, multiplikator #
+    
 
 @app.callback(
     Output("investicija-out", "children"),
@@ -2227,14 +2320,15 @@ def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vredn
     State(component_id="stored_MT_omrez", component_property="data"),
     State(component_id="stored_ET_omrez", component_property="data"),
     State(component_id="stored_obracunska_cena", component_property="data"),
+    State(component_id="stored_moc_elektrarne", component_property="data"),
+    State(component_id="stored_prispevek_OVE_star", component_property="data"),
 )
-def ekonomika_FV_stara(data, VT, MT, ET, cena_elektrarne, obracunska_moc, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena):
+def ekonomika_FV_stara(data, VT, MT, ET, cena_elektrarne, obracunska_moc, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, moc_elektrarne, stored_prispevek_OVE_star):
     data = pd.DataFrame.from_dict(data)
-    cena_old, cena_new, omreznina_stara, stran_dej= izračun_cene_el_energije(obracunska_moc, VT, MT, ET, data, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, "razlika")
+    cena_old, cena_new, omreznina_stara, stran_dej= izračun_cene_el_energije(obracunska_moc, VT, MT, ET, data, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, "razlika", stored_prispevek_OVE_star)
     strosek_old = data["Energija A+"].sum()*cena_old
     strosek_new = data[data["razlika"]>0]["razlika"].sum() * cena_new
-    pv_power=(data['proizvodnja_15']/data['proizvodnja_15_norm']).mean()
-    investicija = pv_power*cena_elektrarne
+    investicija = moc_elektrarne*cena_elektrarne
     strosek_new_zavarovanje = strosek_new + investicija*1.05/100
     prihranek = strosek_old - (strosek_new_zavarovanje)#nekisneki
     vracilna_doba = investicija/prihranek
@@ -2269,10 +2363,11 @@ def ekonomika_FV_stara(data, VT, MT, ET, cena_elektrarne, obracunska_moc, VT_omr
     State(component_id="stored_cena_blok_energija", component_property="data"),
     State(component_id="stored_bloki_check", component_property="data"),
     State(component_id="stored_bloki_values", component_property="data"),
-    
+    State(component_id="stored_prispevek_OVE", component_property="data"),
+    State(component_id="stored_moc_elektrarne", component_property="data"),
 
 )
-def ekonomika_FV_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, cena_elektrarne, cena_blok_moc, cena_blok_energija, bloki_check, bloki_values):
+def ekonomika_FV_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, cena_elektrarne, cena_blok_moc, cena_blok_energija, bloki_check, bloki_values, prispevek_OVE, moc_elektrarne):
     data = pd.DataFrame.from_dict(data)
 
     if prikljucna_moc <= 17:
@@ -2282,10 +2377,9 @@ def ekonomika_FV_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc,
     elif prikljucna_moc > 43:
         delez = 25
 
-    pv_power=(data['proizvodnja_15']/data['proizvodnja_15_norm']).mean()
-    investicija = pv_power*cena_elektrarne
-    bloki_brez, omreznina_nova_brez, koncna_cena_brez, nova_prikljucna_moc_value_old = izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, delez, "Energija A+", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values)
-    bloki_z_PV, omreznina_nova_z_PV, koncna_cena_z_PV, nova_prikljucna_moc_value = izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, delez, "razlika", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values)
+    investicija = moc_elektrarne*cena_elektrarne
+    bloki_brez, omreznina_nova_brez, koncna_cena_brez, nova_prikljucna_moc_value_old = izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, delez, "Energija A+", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values, prispevek_OVE)
+    bloki_z_PV, omreznina_nova_z_PV, koncna_cena_z_PV, nova_prikljucna_moc_value = izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, delez, "razlika", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values, prispevek_OVE)
     koncna_cena_z_PV_zavarovanje = koncna_cena_z_PV + investicija*1.05/100
     prihranek = koncna_cena_brez - (koncna_cena_z_PV_zavarovanje)
     vracilna_doba = investicija/prihranek
@@ -2314,11 +2408,14 @@ def ekonomika_FV_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc,
     State(component_id="stored_ET", component_property="data"),
     Input(component_id="stored_cena_baterije", component_property="data"),
     Input(component_id="stored_kapaciteta_baterije_rezanje_konic", component_property="data"),
+    Input(component_id="stored_kapaciteta_baterije_osnovno", component_property="data"),
     State(component_id="stored_cena_elektrarne", component_property="data"),
     State(component_id="stored_prikljucna_moc", component_property="data"),
+    State(component_id="stored_moc_elektrarne", component_property="data"),
+    Input(component_id="stored_optimum_osnovna", component_property="data"),
     prevent_initial_call=True
 )
-def velikost_bat(baterija1, baterija2, data, VT, MT, ET, BEES_price, kapaciteta_baterije_rezanje_konic, cena_elektrarne, prikljucna_moc):
+def velikost_bat(baterija1, baterija2, data, VT, MT, ET, BEES_price, kapaciteta_baterije_rezanje_konic, kapaciteta_baterije_osnovno, cena_elektrarne, prikljucna_moc, moc_elektrarne, optimum):
     data = pd.DataFrame.from_dict(data)
     kapaciteta = 0
     if data is None or VT is None or MT is None or ET is None or BEES_price is None or cena_elektrarne is None:
@@ -2334,13 +2431,20 @@ def velikost_bat(baterija1, baterija2, data, VT, MT, ET, BEES_price, kapaciteta_
         elif prikljucna_moc > 43:
             bounds_x1 = (50,1500)
 
-        if baterija1:
+        
+        if baterija1 and optimum == ['OPTIMUM_YES']:
             x0 = np.array([50])
-            result = minimize(izračun_batt_osnovna,x0, method="L-BFGS-B",  bounds=[bounds_x1], args=(data, VT, MT, ET, BEES_price, cena_elektrarne))#, constraints=[constrain1])
+            result = minimize(izračun_batt_osnovna,x0, method="L-BFGS-B",  bounds=[bounds_x1], args=(data, VT, MT, ET, BEES_price, cena_elektrarne, moc_elektrarne))#, constraints=[constrain1])
             kapaciteta = result.x[0]
+        elif baterija1 and optimum !=['OPTIMUM_YES']:
+            samooskrba_var = samooskrba(data['Energija A+']*4,data['proizvodnja_15']*4)
+            data['Battery power'], data["SoC"] = samooskrba_var.profil_samooskrbe(kapaciteta_baterije_osnovno, kapaciteta_baterije_osnovno*0.1, kapaciteta_baterije_osnovno/2, -kapaciteta_baterije_osnovno/2)
+            data['BESS']=data['Energija A+']-data['proizvodnja_15']-data['Battery power']/4
+            data['Koncni_profil']=data['Energija A+']-data['proizvodnja_15']-data['Battery power']/4 # ker je moč in ne energija
+            data.loc[data['BESS'] < 0, 'BESS'] = float(0)
+            kapaciteta = kapaciteta_baterije_osnovno
         elif baterija2:
-            kapaciteta, data = izračun_batt_rezanje_konic(kapaciteta_baterije_rezanje_konic, data, VT, MT, ET, BEES_price, cena_elektrarne)
-
+            kapaciteta, data = izračun_batt_rezanje_konic(kapaciteta_baterije_rezanje_konic, data, VT, MT, ET, BEES_price, cena_elektrarne, moc_elektrarne)
         data_dict = data.to_dict('records')
     data_dict = data.to_dict('records')
     return kapaciteta, kapaciteta, data_dict
@@ -2367,15 +2471,16 @@ def velikost_bat(baterija1, baterija2, data, VT, MT, ET, BEES_price, kapaciteta_
     State(component_id="stored_MT_omrez", component_property="data"),
     State(component_id="stored_ET_omrez", component_property="data"),
     State(component_id="stored_obracunska_cena", component_property="data"),
+    State(component_id="stored_moc_elektrarne", component_property="data"),
+    State(component_id="stored_prispevek_OVE_star", component_property="data"),
     prevent_initial_call=True
 )
-def ekonomika_stara_baterija(data, VT, MT, ET, BEES_price, cena_elektrarne, kapaciteta,  obracunska_moc, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena):
+def ekonomika_stara_baterija(data, VT, MT, ET, BEES_price, cena_elektrarne, kapaciteta,  obracunska_moc, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, moc_elektrarne, stored_prispevek_OVE_star):
     data = pd.DataFrame.from_dict(data)
-    cena_old, cena_new, omreznina_stara, omreznina_nova_old = izračun_cene_el_energije(obracunska_moc, VT, MT, ET, data, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, "BESS")
+    cena_old, cena_new, omreznina_stara, omreznina_nova_old = izračun_cene_el_energije(obracunska_moc, VT, MT, ET, data, VT_omrez, MT_omrez, ET_omrez, obracunska_moc_cena, "BESS", stored_prispevek_OVE_star)
     strosek_old = data["Energija A+"].sum()*cena_old
     strosek_new = data[data["BESS"]>0]["BESS"].sum() * cena_new
-    pv_power=(data['proizvodnja_15']/data['proizvodnja_15_norm']).mean()
-    investicija = pv_power*cena_elektrarne + BEES_price*kapaciteta
+    investicija = moc_elektrarne*cena_elektrarne + BEES_price*kapaciteta
     strosek_new_zavarovanje = strosek_new + investicija*1.05/100
     prihranek = strosek_old - (strosek_new_zavarovanje)
     if prihranek < 0:
@@ -2398,7 +2503,6 @@ def ekonomika_stara_baterija(data, VT, MT, ET, BEES_price, cena_elektrarne, kapa
     Input(component_id="izvoz-podatki_bat", component_property="data"),
     State(component_id="stored_prikljucna_moc", component_property="data"),
     State(component_id="stored_nova_prikljucna_moc", component_property="data"),
-    State(component_id="stored_obracunska_moc", component_property="data"),
     State(component_id="stored_VT", component_property="data"),
     State(component_id="stored_MT", component_property="data"),
     State(component_id="stored_ET", component_property="data"),
@@ -2409,8 +2513,10 @@ def ekonomika_stara_baterija(data, VT, MT, ET, BEES_price, cena_elektrarne, kapa
     Input(component_id="stored_velikost_bat", component_property="data"),
     State(component_id="stored_bloki_check", component_property="data"),
     State(component_id="stored_bloki_values", component_property="data"),
+    State(component_id="stored_prispevek_OVE", component_property="data"),
+    State(component_id="stored_moc_elektrarne", component_property="data"),
 )
-def ekonomika_baterija_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, cena_elektrarne, cena_blok_moc, cena_blok_energija, cena_baterije, velikost_bat, bloki_check, bloki_values):
+def ekonomika_baterija_nova(data, prikljucna_moc, nova_prikljucna_moc, VT, MT, ET, cena_elektrarne, cena_blok_moc, cena_blok_energija, cena_baterije, velikost_bat, bloki_check, bloki_values, prispevek_OVE, moc_elektrarne):
     data = pd.DataFrame.from_dict(data)
 
     if prikljucna_moc <= 17:
@@ -2420,12 +2526,11 @@ def ekonomika_baterija_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunsk
     elif prikljucna_moc > 43:
         delez = 25
 
-    pv_power=(data['proizvodnja_15']/data['proizvodnja_15_norm']).mean()
-    investicija = pv_power*cena_elektrarne + velikost_bat*cena_baterije
+    investicija = moc_elektrarne*cena_elektrarne + velikost_bat*cena_baterije
     
 
-    bloki_brez, omreznina_nova_brez, koncna_cena_brez, nova_prikljucna_moc_value_old= izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, delez, "Energija A+", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values)
-    bloki_z_BHEE, omreznina_nova_z_PV, koncna_cena_z_BHEE, nova_prikljucna_moc_value = izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunska_moc, VT, MT, ET, delez, "BESS", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values)
+    bloki_brez, omreznina_nova_brez, koncna_cena_brez, nova_prikljucna_moc_value_old= izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, moc_elektrarne, VT, MT, ET, delez, "Energija A+", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values, prispevek_OVE)
+    bloki_z_BHEE, omreznina_nova_z_PV, koncna_cena_z_BHEE, nova_prikljucna_moc_value = izracun_cene_nova(data, prikljucna_moc, nova_prikljucna_moc, moc_elektrarne, VT, MT, ET, delez, "BESS", cena_blok_moc, cena_blok_energija, bloki_check, bloki_values, prispevek_OVE)
     koncna_cena_z_BHEE_zavaro = koncna_cena_z_BHEE + investicija*1.05/100    
     prihranek = koncna_cena_brez - (koncna_cena_z_BHEE_zavaro)
     if prihranek < 0:
@@ -2441,4 +2546,4 @@ def ekonomika_baterija_nova(data, prikljucna_moc, nova_prikljucna_moc, obracunsk
 
 #pogon aplikacije
 if __name__ == '__main__':
-    app.run(debug=True) #port added MP open http://127.0.0.1:8054/ in browser
+    app.run(debug=True, port=8054) #port added MP open http://127.0.0.1:8054/ in browser
