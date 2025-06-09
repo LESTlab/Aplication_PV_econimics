@@ -2223,6 +2223,7 @@ def izracun_moci(nacin_izracuna, moč_panela, povrsina_panela, eff_panela, vredn
     osvetljenost = pd.DataFrame.from_dict(osvetljenost)
     poraba = pd.DataFrame.from_dict(poraba)
     osvetljenost["Datum in cas"] = pd.to_datetime(osvetljenost['Datum in cas'])
+    osvetljenost["Datum in cas"] = osvetljenost["Datum in cas"].dt.round("min")
     poraba['Časovna značka'] = pd.to_datetime(poraba['Časovna značka'])
     leto_osvetljenost = osvetljenost["Datum in cas"].iloc[0].year
     leto_poraba = poraba['Časovna značka'].iloc[0].year
